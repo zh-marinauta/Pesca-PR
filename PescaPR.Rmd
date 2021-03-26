@@ -1,0 +1,638 @@
+---
+title: "PMAP - Portos do Paraná"
+author: "zehoogle@gmail.com"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: column
+    vertical_layout: fill
+---
+
+```{r setup, include=FALSE}
+#------------------ Packages ------------------
+library(flexdashboard)
+library(dplyr)
+library(lubridate)
+library(ggplot2)
+library(leaflet)
+library(tigris)
+library(leafpop)
+library(htmltools)
+library(sf)
+library(imager)
+library(DT)
+library(dygraphs)
+library(quantmod)
+(library(stringr))
+
+`%>%` <- magrittr::`%>%`
+#------------------ Parameters ------------------
+# Set colors
+# https://www.w3.org/TR/css-color-3/#svg-color
+peso_cor <- "purple"
+duzia_cor <- "peru"
+receita_cor <- "yellow"
+barcos_cor <- "red"
+desembarque_cor<-"forestgreen"
+#------------------ Data ------------------
+
+bd<-read.csv("C:/Users/AllanaNunes/Desktop/Python/bd_jan21.csv",h=T, sep=";", dec=",")
+## Manipulações
+
+#retirando colunas desnecessárias
+bd<-bd[-c(31,32,33,34,35)] 
+
+# renomeando colunas
+names(bd)[1:30] <- c("ID1", "ID","Data", "Hora","Mes", "Ano", "Entreposto", "Codigo", "Pescador", "SPP", "Barco","Tipo", "Municipio", "Origem", "Tempo_pesca", "Arte_agrupado", "Arte", "Malha", "Tipo_recurso", "Familia", "Taxon","Nome_popular", "Peso", "Duzia", "Preco", "Pesqueiro", "Regiao", "Befeficiamento","Venda", "Receita") 
+
+# Trabalhando a Data
+
+bd$Data<-dmy(bd$Data)
+
+bd$data_extenso<-format(bd$Data, "%B de %Y")
+
+so_mes<-bd$Data[length(bd$Data)]
+so_mes<-format(so_mes, "%B")
+
+
+#bd<-lapply(bd,rm_accent)
+#bd<-lapply(bd, str_trim)
+bd$Pescador<-str_to_upper(bd$Pescador)
+bd$Barco<-str_to_upper(bd$Barco)
+#bd<-as.data.frame(bd)
+
+
+#Transforando as classes das colunas
+#bd$Receita<-as.numeric(bd$Receita)
+bd$Peso<-as.numeric(bd$Peso)
+bd$Preco<-as.numeric(bd$Preco)
+#bd$Receita<-as.numeric(bd$Receita)
+
+
+#Numero de barcos ativos por mes em cada entreposto
+barcos<-bd %>% group_by(Mes=floor_date(Data, "month"),  Origem, Barco, SPP) %>% 
+  summarise(Atividade = length(ID1[!is.na(ID1)]))
+barcos<-filter(barcos, Barco != "S/N - -") #tirando os barcos que não são conhecidos
+
+barcos<-filter(barcos, Barco != "-")#tirando os barcos que não são conhecidos
+
+barcos1<-barcos %>% group_by(Mes) %>%
+  summarize(Barcos_ativos = length(Barco)) # barcos por entreposto por mes
+
+barcos1
+
+barcos2<-barcos1 %>% group_by(Mes) %>%
+  summarize(Barcos_ativos = sum(Barcos_ativos)) # barcos totais por mes
+barcos2
+
+# Dados Gerais
+dg_ent<- bd%>%group_by(Mes=floor_date(Data, "month"),Ano, Entreposto) %>%
+  summarise(Desembarques = length(ID1[!is.na(ID1)]), Peso = sum(Peso, na.rm=T), Duzia= sum(Duzia, na.rm=T),  Receita = sum(Receita, na.rm=T)) # dados gerais totais por entreposto por mes
+
+dg_total<- bd%>%group_by(Mes=floor_date(Data, "month"), data_extenso) %>%
+  summarise(Desembarques = length(ID1[!is.na(ID1)]), Peso = sum(Peso, na.rm=T), Duzia= sum(Duzia, na.rm=T),  Receita = sum(Receita, na.rm=T)) # dados gerais totais por mes
+
+
+
+# meses
+mes_atual<-dg_total$data_extenso[length(dg_total$data_extenso)]
+mes_passado<-dg_total$data_extenso[length(dg_total$data_extenso)-1]
+
+# Dados do ultimo mes
+
+desembarque_atual<-dg_total$Desembarques[length(dg_total$Desembarques)] #Numero de desembarque
+barcos_atual<-tail(barcos1$Barcos_ativos, 1)
+peso_atual<-dg_total$Peso[length(dg_total$Peso)] # Peso Total
+duzia_atual<-dg_total$Duzia[length(dg_total$Duzia)] # Duzias totais
+receita_atual<-dg_total$Receita[length(dg_total$Receita)] # Receita total
+
+
+```
+
+Dados Gerais (`r  mes_atual`)
+=======================================================================
+
+
+Row
+-----------------------------------------------------------------------
+
+### barco_ativo {.value-box}
+
+```{r}
+valueBox(
+  value = paste(format(barcos_atual, big.mark = ".")),
+  caption = "Barcos ativos identificados",
+  icon = "fas fa-ship",
+  color = barcos_cor
+)
+
+
+```
+
+
+### Desembarque_total {.value-box}
+
+```{r}
+valueBox(
+  value = paste(format(desembarque_atual, big.mark = ".", decimal.mark=",")),
+  caption = "Total de desembarques monitorados",
+  icon = "fas fa-anchor",
+  color = desembarque_cor
+)
+
+
+```
+
+
+
+### Peso_total {.value-box}
+
+
+```{r}
+valueBox(
+  value = paste(format(peso_atual, big.mark = ".", decimal.mark=",")),
+  caption = "Peso total desembarcado",
+  icon = "fas fa-fish",
+  color = peso_cor
+)
+
+
+```
+
+
+
+### Duzias_total {.value-box}
+
+```{r}
+valueBox(
+  value = paste(format(duzia_atual, big.mark = ".", decimal.mark=",")),
+  caption = "Unidades desembarcado",
+  icon = "fas fa-fish",
+  color = duzia_cor
+)
+
+
+```
+
+
+### Receita_total {.value-box}
+
+
+```{r}
+valueBox(
+  value = paste(format(receita_atual, big.mark = ".", decimal.mark=",")),
+  caption = "Receita total",
+  icon = "fas fa-dollar-sign",
+  color = receita_cor
+)
+
+
+```
+
+Row{.tabset}
+-----------------------------------------------------------------------
+
+### **Receita x Recurso**
+
+```{r}
+library(plotly)
+bd_top<-bd %>% filter(data_extenso == max(data_extenso))
+
+toprec<-bd_top%>%group_by(Nome_popular)%>%
+  summarise(totalreceita = round(sum(Receita, na.rm=T),2))
+
+
+
+
+p <- plot_ly(
+  toprec,
+  labels = ~ Nome_popular,
+  parents = NA,
+  values = ~ round(totalreceita),
+  type = 'treemap',
+  textinfo="label+value+percent parent",
+  hovertemplate = "Recurso pesqueiro: %{label}<br>Receita Bruta: %{value}<extra></extra>"
+)
+p
+
+
+```
+
+### **Peso x Recurso**
+
+```{r}
+
+bd_top<-bd %>% filter(data_extenso == max(data_extenso))
+
+toppeso<-bd_top%>%group_by(Nome_popular)%>%
+  summarise(totalpeso = round(sum(Peso,na.rm=T),2))
+
+
+
+
+p1 <- plot_ly(
+  toppeso,
+  labels = ~ Nome_popular,
+  parents = NA,
+  values = ~ round(totalpeso),
+  type = 'treemap',
+  textinfo="label+value+percent parent",
+  hovertemplate = "Recurso pesqueiro: %{label}<br>Peso: %{value}<extra></extra>"
+)
+p1
+
+```
+
+### **Duzia x Recurso**
+
+```{r}
+
+bd_top<-bd %>% filter(data_extenso == max(data_extenso))
+
+topduzia<-bd_top%>%group_by(Nome_popular)%>%
+  summarise(totalduzia = round(sum(Duzia,na.rm=T),2))
+
+
+
+
+p2 <- plot_ly(
+  topduzia,
+  labels = ~ Nome_popular,
+  parents = NA,
+  values = ~ round(totalduzia),
+  type = 'treemap',
+  textinfo="label+value+percent parent",
+  hovertemplate = "Recurso pesqueiro: %{label}<br>Duzias: %{value}<extra></extra>"
+)
+p2
+
+```
+
+### **Sistema de Pesca**
+
+```{r}
+
+
+bd_top<-bd %>% filter(data_extenso == max(data_extenso))
+
+topspp<-bd_top%>%group_by(SPP)%>%
+  summarise(receitaspp = round(sum(Receita,na.rm=T),2))
+
+
+
+
+p3 <- plot_ly(
+  topspp,
+  labels = ~ SPP,
+  parents = NA,
+  values = ~ round(receitaspp),
+  type = 'treemap',
+  textinfo="label+value+percent parent",
+  hovertemplate = "Sistema Produtivo de Pesca: %{label}<br>Receita: %{value}<extra></extra>"
+)
+p3
+
+```
+
+
+
+
+Acumulado no Ano
+=======================================================================
+
+
+Row {.value-box}
+-----------------------------------------------------------------------
+
+### Barcos
+
+```{r}
+barcosx<-bd %>% group_by(Ano=floor_date(Data, "year"), Origem, Barco, Tipo, SPP) %>% 
+  summarise(Atividade = length(ID1[!is.na(ID1)]))
+barcosx<-filter(barcosx, Barco != "S/N - -") #tirando os barcos que não são conhecidos
+barcosx<-filter(barcosx, Barco != "-")#tirando os barcos que não são conhecidos
+
+barcosxx<-barcosx %>% group_by(Ano) %>%
+  summarize(Barcos_ativos = length(Barco)) # barcos por entreposto por mes
+barcos_anual<-tail(barcosxx$Barcos_ativos,1)
+
+valueBox(
+  value = paste(format(barcosxx$Barcos_ativos[length(barcosxx$Barcos_ativos)], big.mark = ".", decimal.mark = ","), "Barcos"),
+  caption = "Ativos monitorados",
+  icon = "fas fa-ship",
+  color = barcos_cor
+)
+```
+
+
+### Desembarque
+
+```{r}
+ano_atual<-dg_total%>% group_by(Ano=floor_date(Mes, "year"))%>%
+  summarize(Desembarques = sum(Desembarques), Peso=sum(Peso), Duzia=sum(Duzia), Receita=sum(Receita))
+
+ano_atual<-ano_atual[-1,]
+
+
+valueBox(
+  value = paste(format(ano_atual$Desembarques[length(ano_atual$Desembarques)], big.mark = ".", decimal.mark = ","), "Registros"),
+  caption = "de desembarques monitorados",
+  icon = "fas fa-anchor",
+  color = desembarque_cor
+)
+
+
+```
+
+
+### Peso
+
+```{r}
+valueBox(
+  value = paste(format(ano_atual$Peso[length(ano_atual$Peso)], big.mark = ".", decimal.mark = ","), "Kg"),
+  caption = "foi o peso total",
+  icon = "fas fa-fish",
+  color = peso_cor
+)
+```
+
+
+### Duzia
+
+```{r}
+valueBox(
+  value = paste(format(ano_atual$Duzia[length(ano_atual$Duzia)], big.mark = ".", decimal.mark = ","), "Dz"),
+  caption = "foi a quantidade de dúzias",
+  icon = "fas fa-fish",
+  color = duzia_cor
+)
+```
+
+
+### Receita {.value-box}
+
+```{r}
+valueBox(
+  value = paste(format(ano_atual$Receita[length(ano_atual$Receita)], big.mark = ".", decimal.mark = ","), "R$"),
+  caption = "foi receita bruta gerada",
+  icon = "fas fa-dollar-sign",
+  color = receita_cor
+)
+```
+
+
+Row{.tabset}
+-----------------------------------------------------------------------
+### Barcos Ativos
+
+```{r}
+z5<-ggplot(barcosxx, aes(x=Ano, y=Barcos_ativos))+
+geom_bar(stat="identity", color="black", fill=barcos_cor)+
+geom_hline(aes(yintercept = mean(Barcos_ativos[-length(Barcos_ativos)])))+
+scale_y_continuous(breaks=c(300,600,900,1200))+
+  theme_minimal()
+
+z5
+```
+
+### Desembarque
+
+```{r}
+z4<-ggplot(ano_atual, aes(x=Ano, y=Desembarques))+
+geom_bar(stat="identity", color="black", fill=desembarque_cor)+
+geom_hline(aes(yintercept = mean(Desembarques[-length(Desembarques)])))+
+scale_y_continuous(breaks=c(3000,6000,9000,12000), labels=c("3 mil", "6 mil", "9 mil", "12 mil"))+
+  theme_minimal()
+  
+
+z4
+```
+
+### Peso
+
+```{r}
+z2<-ggplot(ano_atual, aes(x=Ano, y=Peso))+
+geom_bar(stat="identity", color="black", fill=peso_cor)+
+geom_hline(aes(yintercept = mean(Peso[-length(Peso)])))+
+scale_y_continuous(breaks=c(100000,200000,300000,400000), labels=c("100 ton", "200 ton", "300 ton", "400 ton"))+
+  theme_minimal()
+  
+
+z2
+```
+
+### Duzia
+```{r}
+z3<-ggplot(ano_atual, aes(x=Ano, y=Duzia))+
+geom_bar(stat="identity", color="black", fill=duzia_cor)+
+geom_hline(aes(yintercept = mean(Duzia[-length(Duzia)])))+
+scale_y_continuous(breaks=c(15000,30000,45000,60000), labels=c("15 mil", "30 mil", "45 mil", "60 mil"))+
+  theme_minimal()
+  
+
+z3
+```
+
+### Receita Bruta
+```{r}
+z1<-ggplot(ano_atual, aes(x=Ano, y=Receita))+
+geom_bar(stat="identity", color="black", fill=receita_cor)+
+geom_hline(aes(yintercept = mean(Receita[-length(Receita)])))+
+scale_y_continuous(breaks=c(1000000,2000000,3000000,4000000), labels=c("1 M", "2 M", "3 M", "4 M"))+
+  theme_minimal()
+  
+
+z1
+```
+
+### Recursos X Receita
+```{r}
+library(plotly)
+bd_top_anual<-bd %>% filter(Ano == max(Ano))
+
+toprec_anual<-bd_top_anual%>%group_by(Nome_popular)%>%
+  summarise(totalreceita = round(sum(Receita, na.rm=T),2))
+
+
+
+
+p_anual <- plot_ly(
+  toprec_anual,
+  labels = ~ Nome_popular,
+  parents = NA,
+  values = ~ round(totalreceita),
+  type = 'treemap',
+  textinfo="label+value+percent parent",
+  hovertemplate = "Recurso pesqueiro: %{label}<br>Receita Bruta: %{value}<extra></extra>"
+)
+p_anual
+
+
+```
+
+### Frotas X Receita
+```{r}
+library(plotly)
+bd_top_anual<-bd %>% filter(Ano == max(Ano))
+
+frota_anual<-bd_top_anual%>%group_by(SPP)%>%
+  summarise(totalreceita = round(sum(Receita, na.rm=T),2))
+
+
+
+
+pp_anual <- plot_ly(
+ frota_anual,
+  labels = ~ SPP,
+  parents = NA,
+  values = ~ round(totalreceita),
+  type = 'treemap',
+  textinfo="label+value+percent parent",
+  hovertemplate = "Recurso pesqueiro: %{label}<br>Receita Bruta: %{value}<extra></extra>"
+)
+pp_anual
+```
+
+### Região x Receita 
+
+
+
+Séries Temporais
+=======================================================================
+
+
+
+### Numero de desembarques monitorados:
+
+
+```{r}
+
+library(dygraphs)
+
+desembarque_ts <- ts(dg_total$Desembarques, start=c(2013, 12), end=c(2020, 9), frequency=12)
+peso_ts<- ts(dg_total$Peso, start=c(2013, 12), end=c(2020, 9), frequency=12)
+duzia_ts <- ts(dg_total$Duzia, start=c(2013, 12), end=c(2020, 9), frequency=12)
+receita_ts <- ts(dg_total$Receita, start=c(2013, 12), end=c(2020, 9), frequency=12)
+
+dygraph(desembarque_ts)
+
+```
+
+### Peso total desembarcado:
+
+```{r}
+dygraph(peso_ts)
+peso_ts
+
+
+dg_total$Peso
+```
+
+### Total de Duzias desembarcada:
+
+```{r}
+dygraph(duzia_ts)
+```
+
+### Receita Bruta Gerada:
+
+```{r}
+dygraph(receita_ts)
+```
+
+Cadastro de Embarcações
+=======================================================================
+Row{.tabset}
+-----------------------------------------------------------------------
+### Mapa
+
+```{r}
+
+cadastro1<-read.csv("C:/Users/AllanaNunes/Desktop/PescaBase/Cadastros/cadastro_250320.csv",h=T, sep=";", dec=",")
+cadastro1$Latitude<-as.numeric(cadastro1$Latitude);cadastro1$Longitude<-as.numeric(cadastro1$Longitude)
+#leaflet() %>%
+# addTiles() %>%
+ # addCircleMarkers(
+  #  lat=cadastro$X_Local.de.cadastro_latitude, lng=cadastro$X_Local.de.cadastro_longitude, 
+ #   color= "red")
+files <- list.files(path = "https://zehoogle.github.io/", pattern = "*.jpg", full.names=TRUE)
+
+
+leaflet() %>%
+  addTiles() %>%
+  addMarkers(data=cadastro1, lat=cadastro1$Latitude, lng=cadastro1$Longitude, group = "points",  popup = ~paste0("<b> Embarcação: </b>", Barco, "<br>",
+                          "<b> Categoria: </b>", SPP, "<br>",
+                          "<b> Tipo: </b>", Tipo, "<br>",
+                          "<b> Pescador: </b>", Pescador, "<br>",
+                          "<b> Contato: </b>", Telefone, "<br>",
+                          "<b> Frequencia Total: </b>", Freq_total, "<br>",
+                          "<img src = ", Foto,  " width = 200>"))
+
+                           
+```
+
+### Lista
+
+```{r}
+individual_prod<-bd %>% group_by( Barco,SPP, Municipio, Origem,Ano) %>%
+  summarize(Receita = sum(Receita, na.rm=T)) # barcos por entreposto por 
+
+names(individual_prod)<-c("Barco", "SPP", "Municipio", "Comunidade", "Ano", "Receita")
+
+cadastroX<-merge(x=cadastro1, y=individual_prod,by=c("Barco", "Comunidade","Municipio", "SPP" ),all.x=T, all.y=F)
+
+
+plotZ<-function(i) {ggplot(cadastroX, aes(x=Ano, y=Receita))+
+geom_bar(stat="identity", color="black", fill=receita_cor)+
+theme_minimal()}
+plotZ
+
+leaflet() %>%
+  addTiles() %>%
+  addMarkers(data=cadastro1, lat=cadastro1$Latitude, lng=cadastro1$Longitude, group = "points")%>%
+   addPopupGraphs(list(), group = "pnt", width = 300, height = 400)
+
+                           
+```
+
+Mapas
+===================================================
+
+Row{.tabset}
+-----------------------------------------------------------------------
+
+### **Locais**
+
+```{r}
+
+
+bd_top<-bd %>% filter(data_extenso == max(data_extenso))
+
+toppesq<-bd_top%>%group_by(Regiao)%>%
+  summarise(receitapesq = round(sum(Receita,na.rm=T),2))
+
+
+
+toppesq$lat<-c("",-25.449387,-25.544723,-25.622018,-25.489590,-25.380267)
+toppesq$lat<-as.numeric(toppesq$lat)
+
+toppesq$long<-c("", -48.677076,-48.346765, -48.284438,-48.548292,-48.367566)
+
+toppesq$long<-as.numeric(toppesq$long)
+
+ leaflet(toppesq) %>% addTiles() %>%
+  addCircles(lng = ~long, lat = ~lat, weight = 1,
+    radius = ~sqrt(receitapesq) * 30, popup = ~Regiao
+  )
+
+
+```
+
+### Pesqueiros
+```{r}
+pesq_map<-st_read("C:/Users/AllanaNunes/Desktop/PescaBase/FOTOS/Cadastro/teste/Pesqueiros.kml")
+
+
+leaflet(pesq_map)
+```
+
+
