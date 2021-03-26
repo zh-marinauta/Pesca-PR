@@ -570,26 +570,54 @@ leaflet() %>%
                            
 ```
 
-### Lista
+### Cadastros de Embarcaçoes
 
 ```{r}
-individual_prod<-bd %>% group_by( Barco,SPP, Municipio, Origem,Ano) %>%
-  summarize(Receita = sum(Receita, na.rm=T)) # barcos por entreposto por 
 
-names(individual_prod)<-c("Barco", "SPP", "Municipio", "Comunidade", "Ano", "Receita")
+a<-length(cadastro1$Barco)
+b<-length(cadastro1$Freq_total[!is.na(cadastro1$Freq_total)]) # Numero de embarcações no cadastros que já contribuiram para o MOnitoramento
+identificados<- subset(cadastro1, Barco != "S/N -")
+c<-length(identificados$Barco)
 
-cadastroX<-merge(x=cadastro1, y=individual_prod,by=c("Barco", "Comunidade","Municipio", "SPP" ),all.x=T, all.y=F)
+```
+
+Estão registrados **`r a`** no Cadastro de Embarcações do PMAP, dos quais **`r c`** (`r round(c/a*100, 2)`%)  estão identificadas pelo nome da embarcação e/ou Nome do Pescador.
+
+Dentre as embarcações registradas, **`r b`** (`r round(b/c*100, 2)`%) já contribuiram para o Monitoramento do Desembarque Pesqueira realizados nos entrepostos monitorados.
+
+A figura a seguir mostra o número de embarcações cadastradas em cada uma comunidades pesqueiras no CEP
+
+```{r}
+N_Comunidade<- cadastro1 %>%
+  group_by (Comunidade) %>%
+  summarise(N_barcos = n(), participacao = length(Freq_total[!is.na(Freq_total)]), Porcentagem = round(participacao/N_barcos*100, 2))
 
 
-plotZ<-function(i) {ggplot(cadastroX, aes(x=Ano, y=Receita))+
-geom_bar(stat="identity", color="black", fill=receita_cor)+
-theme_minimal()}
-plotZ
 
-leaflet() %>%
-  addTiles() %>%
-  addMarkers(data=cadastro1, lat=cadastro1$Latitude, lng=cadastro1$Longitude, group = "points")%>%
-   addPopupGraphs(list(), group = "pnt", width = 300, height = 400)
+cad_com <- plot_ly(
+ N_Comunidade,
+  labels = ~ Comunidade,
+  parents = NA,
+  values = ~ round(N_barcos),
+  type = 'treemap',
+  textinfo="label+value+percent parent",
+  hovertemplate = "Comunidade: %{label}<br>N° barcos cadastrados: %{value}<extra></extra>")
+
+cad_com
+```
+
+
+
+### Lista de embarcações
+
+```{r}
+
+library(kableExtra)
+cadastro<-cadastro1[c(3,2,5,1,11,10,12,13,14,15,16,3,2,8,9)]
+
+kable(cadastro) %>%
+   kable_styling()%>%
+  scroll_box(width = "1000px", height = "500px")
 
                            
 ```
