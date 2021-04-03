@@ -35,7 +35,7 @@ barcos_cor <- "red"
 desembarque_cor<-"forestgreen"
 #------------------ Data ------------------
 
-bd<-read.csv("C:/Users/AllanaNunes/Desktop/Python/bd_jan21.csv",h=T, sep=";", dec=",")
+bd<-read.csv("C:/Users/AllanaNunes/Desktop/Python/bd_fev21.csv",h=T, sep=";", dec=",")
 ## Manipulações
 
 #retirando colunas desnecessárias
