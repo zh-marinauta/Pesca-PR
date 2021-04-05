@@ -105,7 +105,6 @@ peso_atual<-dg_total$Peso[length(dg_total$Peso)] # Peso Total
 duzia_atual<-dg_total$Duzia[length(dg_total$Duzia)] # Duzias totais
 receita_atual<-dg_total$Receita[length(dg_total$Receita)] # Receita total
 
-
 ```
 
 Dados Gerais (`r  mes_atual`)
