@@ -69,7 +69,7 @@ bd$Preco<-as.numeric(bd$Preco)
 
 
 #Numero de barcos ativos por mes em cada entreposto
-barcos<-bd %>% group_by(Mes=floor_date(Data, "month"),  Origem, Barco, SPP) %>% 
+barcos<-bd %>% group_by(Mes=floor_date(Data, "month"),  Origem, Barco, SPP, Tipo) %>% 
   summarise(Atividade = length(ID1[!is.na(ID1)]))
 barcos<-filter(barcos, Barco != "S/N - -") #tirando os barcos que não são conhecidos
 
