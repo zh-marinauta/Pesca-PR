@@ -22,7 +22,7 @@ library(imager)
 library(DT)
 library(dygraphs)
 library(quantmod)
-(library(stringr))
+library(stringr)
 
 `%>%` <- magrittr::`%>%`
 #------------------ Parameters ------------------
@@ -35,7 +35,7 @@ barcos_cor <- "red"
 desembarque_cor<-"forestgreen"
 #------------------ Data ------------------
 
-bd<-read.csv("C:/Users/AllanaNunes/Desktop/Python/bd_fev21.csv",h=T, sep=";", dec=",")
+bd<-read.csv("~/Documentos/PMAP_2021/bd_abril21.csv",h=T, sep=",", dec=",")
 ## Manipulações
 
 #retirando colunas desnecessárias
@@ -63,8 +63,8 @@ bd$Barco<-str_to_upper(bd$Barco)
 
 #Transforando as classes das colunas
 #bd$Receita<-as.numeric(bd$Receita)
-bd$Peso<-as.numeric(bd$Peso)
-bd$Preco<-as.numeric(bd$Preco)
+#bd$Peso<-as.numeric(bd$Peso)
+#bd$Preco<-as.numeric(bd$Preco)
 #bd$Receita<-as.numeric(bd$Receita)
 
 
@@ -546,7 +546,7 @@ Row{.tabset}
 
 ```{r}
 
-cadastro1<-read.csv("C:/Users/AllanaNunes/Desktop/PescaBase/Cadastros/cadastro_250320.csv",h=T, sep=";", dec=",")
+cadastro1<-read.csv("~/Documentos/PMAP_2021/cadastro_250320.csv", h=T, sep=";", dec=",")
 cadastro1$Latitude<-as.numeric(cadastro1$Latitude);cadastro1$Longitude<-as.numeric(cadastro1$Longitude)
 #leaflet() %>%
 # addTiles() %>%
@@ -652,14 +652,6 @@ toppesq$long<-as.numeric(toppesq$long)
   )
 
 
-```
-
-### Pesqueiros
-```{r}
-pesq_map<-st_read("C:/Users/AllanaNunes/Desktop/PescaBase/FOTOS/Cadastro/teste/Pesqueiros.kml")
-
-
-leaflet(pesq_map)
 ```
 
 
