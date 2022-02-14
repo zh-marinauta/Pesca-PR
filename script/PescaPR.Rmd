@@ -36,7 +36,8 @@ desembarque_cor<-"forestgreen"
 #------------------ Data ------------------
 
 #verificar endereço
-bd<-read.csv("C:/Users/AllanaNunes/Desktop/BACKUP/Python/bd_jun21.csv",h=T, sep=";", dec=",")
+bd<-read.csv("C:/Users/AllanaNunes/Desktop/MARINAUTA/TECNICO/CIA AMBIENTAL/Python/bd_dez21.csv",h=T, sep=";", dec=",")
+
 ## Manipulações
 
 #retirando colunas desnecessárias
@@ -547,7 +548,7 @@ Row{.tabset}
 
 ```{r}
 #verificar endereço
-cadastro1<-read.csv("C:/Users/AllanaNunes/Desktop/BACKUP/PescaBase/Cadastros/cadastro_250320.csv", h=T, sep=";", dec=",")
+cadastro1<-read.csv("C:/Users/AllanaNunes/Desktop/MARINAUTA/TECNICO/CIA AMBIENTAL/PescaBase/Cadastros/cadastro_250320.csv", h=T, sep=";", dec=",")
 cadastro1$Latitude<-as.numeric(cadastro1$Latitude);cadastro1$Longitude<-as.numeric(cadastro1$Longitude)
 #leaflet() %>%
 # addTiles() %>%
@@ -625,34 +626,6 @@ kable(cadastro) %>%
 Mapas
 ===================================================
 
-Row{.tabset}
------------------------------------------------------------------------
 
-### **Locais**
-
-```{r}
-
-
-bd_top<-bd %>% filter(data_extenso == max(data_extenso))
-
-toppesq<-bd_top%>%group_by(Regiao)%>%
-  summarise(receitapesq = round(sum(Receita,na.rm=T),2))
-
-
-
-toppesq$lat<-c("",-25.449387,-25.544723,-25.622018,-25.489590,-25.380267)
-toppesq$lat<-as.numeric(toppesq$lat)
-
-toppesq$long<-c("", -48.677076,-48.346765, -48.284438,-48.548292,-48.367566)
-
-toppesq$long<-as.numeric(toppesq$long)
-
- leaflet(toppesq) %>% addTiles() %>%
-  addCircles(lng = ~long, lat = ~lat, weight = 1,
-    radius = ~sqrt(receitapesq) * 30, popup = ~Regiao
-  )
-
-
-```
 
 
