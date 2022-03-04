@@ -1,5 +1,5 @@
 {
-setwd("~/Documentos/PMAP_2021")
+setwd("C:/Users/AllanaNunes/Desktop/MARINAUTA/TECNICO/CIA AMBIENTAL/PescaBase")
 
 #Script criado para manipular dados provenientes dos app
 
@@ -17,20 +17,22 @@ library(chron)
 
 #Leitura dos dados
   
-df1<-read.csv("f1.csv", h=T, sep=",")
+df1<-read.csv("f1.csv", h=T, sep=";")
 names(df1)
 
 
 
 
-df2<-read.csv("f2.csv", h=T, sep=",")
+df2<-read.csv("f2.csv", h=T, sep=";")
 
 
 pesq<-read.csv("pesq.csv", h=T, sep=";") # Lista de todos os Pesqueiros
 recurso<-read.csv("recurso.csv", h=T, sep=";") # Lista dos recursos e respectivos nomes cientidicos
-barco<-read.csv("barco1820.csv", h=T, sep=",") # Lista dos recursos e respectivos nomes cientidicos
+barco<-read.csv("barco0222a.csv", h=T, sep=";") # Lista dos recursos e respectivos nomes cientidicos
 barco$Barco<-str_to_upper(barco$Barco)
 barco$Barco<-str_trim(barco$Barco)
+
+
 ## Manipulação de dados
 
 ## Trabalha na coluna de dados gerais do registro (f_1.csv)
@@ -64,6 +66,7 @@ names(df)
 
 df$Data<-as.Date(df$Data)
 df$Mes<-format(df$Data, "%m")
+
 df$Ano<-format(df$Data, "%Y")
 df$Data<-format(df$Data, "%d/%m/%Y")
 
@@ -135,7 +138,6 @@ df<-merge(x=df,y=barco,by=c("Barco", "Comunidade","Municipio" ),all.x=T, all.y=F
 recurso$Pescado<-str_trim(recurso$Pescado)
 
 names(df)
-df<-df[c(23,7,8,9,10,20,21,22,14,15,11,12,13,16,33,1,17,3,2,18,29,5,31,32,4,24,25,26,6,29,27,28,19)]
 
 write.xlsx(df, file = paste("BD_PMAP", Sys.Date(),".xlsx"),  col.names=TRUE, row.names = F)
 
