@@ -188,7 +188,7 @@ Acumulado no Ano
 =======================================================================
 
 
-Row {.value-box}
+Column {data-width=600}
 -----------------------------------------------------------------------
 
 ### Barcos
@@ -196,7 +196,7 @@ Row {.value-box}
 ```{r}
 
 valueBox(
-  value = paste(format(ano_geral$Barcos_ativos[length(ano_geral$Barcos_ativos)], big.mark = ".", decimal.mark = ","), "Barcos"),
+  value = paste(format(ano_geral$Barcos_ativos[length(ano_geral$Barcos_ativos)-1], big.mark = ".", decimal.mark = ","), "Barcos"),
   caption = "ativos monitorados",
   icon = "fas fa-ship",
   color = barcos_cor
@@ -210,7 +210,7 @@ valueBox(
 
 
 valueBox(
-  value = paste(format(ano_geral$Desembarques[length(ano_geral$Desembarques)], big.mark = ".", decimal.mark = ","), "Registros"),
+  value = paste(format(ano_geral$Desembarques[length(ano_geral$Desembarques)-1], big.mark = ".", decimal.mark = ","), "Registros"),
   caption = "de desembarques monitorados",
   icon = "fas fa-anchor",
   color = desembarque_cor
@@ -224,7 +224,7 @@ valueBox(
 
 ```{r}
 valueBox(
-  value = paste(format(ano_geral$Peso[length(ano_geral$Peso)], big.mark = ".", decimal.mark = ","), "Kg"),
+  value = paste(format(ano_geral$Peso[length(ano_geral$Peso)-1], big.mark = ".", decimal.mark = ","), "Kg"),
   caption = "foi o peso total",
   icon = "fas fa-fish",
   color = peso_cor
@@ -236,7 +236,7 @@ valueBox(
 
 ```{r}
 valueBox(
-  value = paste(format(ano_geral$Duzia[length(ano_geral$Duzia)], big.mark = ".", decimal.mark = ","), "Dz"),
+  value = paste(format(ano_geral$Duzia[length(ano_geral$Duzia)-1], big.mark = ".", decimal.mark = ","), "Dz"),
   caption = "foi a quantidade de dúzias",
   icon = "fas fa-fish",
   color = duzia_cor
@@ -247,8 +247,9 @@ valueBox(
 ### Receita {.value-box}
 
 ```{r}
+# [length(ano_geral$Receita)-1]...o menos 1 é por os dados sao do ano anterior
 valueBox(
-  value = paste(format(ano_geral$Receita[length(ano_geral$Receita)], big.mark = ".", decimal.mark = ","), "R$"),
+  value = paste("R$",format(ano_geral$Receita[length(ano_geral$Receita)-1], big.mark = ".", decimal.mark = ",")),
   caption = "foi receita bruta gerada",
   icon = "fas fa-dollar-sign",
   color = receita_cor
@@ -257,10 +258,86 @@ valueBox(
 
 
 
+Column{.tabset}
+-----------------------------------------------------------------------
+### **Receita x Recurso**
+
+```{r}
+library(plotly)
+bd_2021<-bd %>% filter(Ano == 2021)
+
+toprec<-bd_2021%>%group_by(Nome_popular)%>%
+  summarise(totalreceita = round(sum(Receita, na.rm=T),2))
 
 
 
 
+p <- plot_ly(
+  toprec,
+  labels = ~ Nome_popular,
+  parents = NA,
+  values = ~ round(totalreceita),
+  type = 'treemap',
+  textinfo="label+value+percent parent",
+  hovertemplate = "Recurso pesqueiro: %{label}<br>Receita Bruta: %{value}<extra></extra>"
+)
+p
+
+
+```
+
+
+### **Receita x Área de Pesca**
+
+```{r}
+
+arearec<-bd_2021%>%group_by(Regiao)%>%
+  summarise(totalreceita = round(sum(Receita, na.rm=T),2))
+
+
+
+
+p <- plot_ly(
+  arearec,
+  labels = ~ Regiao,
+  parents = NA,
+  values = ~ round(totalreceita),
+  type = 'treemap',
+  textinfo="label+value+percent parent",
+  hovertemplate = "Região de Pesca: %{label}<br>Receita Bruta: %{value}<extra></extra>"
+)
+p
+
+
+
+```
+
+
+
+### **Receita x Comunidade**
+
+```{r}
+
+origemrec<-bd_2021%>%group_by(Origem)%>%
+  summarise(totalreceita = round(sum(Receita, na.rm=T),2))
+
+
+
+
+p <- plot_ly(
+  origemrec,
+  labels = ~ Origem,
+  parents = NA,
+  values = ~ round(totalreceita),
+  type = 'treemap',
+  textinfo="label+value+percent parent",
+  hovertemplate = "Origem da unidade produtiva: %{label}<br>Receita Bruta: %{value}<extra></extra>"
+)
+p
+
+
+
+```
 
 ```{r GRAFICOS GERAIS, include= F}
 
@@ -271,11 +348,47 @@ mes_entreposto
 
 
 
-comunidades<-read.csv("C:/Users/AllanaNunes/Desktop/comunidades.csv",h=T, sep=";", dec=",")
-
+comunidades<-read.csv("C:/Users/AllanaNunes/Desktop/MARINAUTA/TECNICO/CIA AMBIENTAL/Pesca-PR/Seminario/Comunidades.csv",h=T, sep=";", dec=",")
+""
 
 comunidades
 
 ```
+
+Column {data-width=600}
+----------------------------------------------------------------------------------
+### FOT0
+
+
+```{r}
+
+```
+
+
+Comunidades Pesqueiras
+=======================================================================
+Row{.tabset}
+-----------------------------------------------------------------------
+### Mapa
+
+```{r}
+
+
+comunidades$y <-as.numeric(comunidades$y);comunidades$x<-as.numeric(comunidades$x)
+#leaflet() %>% 
+ # addCircleMarkers(
+  #  lat=cadastro$X_Local.de.cadastro_latitude, lng=cadastro$X_Local.de.cadastro_longitude, 
+ #   color= "red")
+files <- list.files(path = "https://zehoogle.github.io/", pattern = "*.jpg", full.names=TRUE)
+
+
+leaflet(comunidades) %>%
+  addTiles() %>%
+  addMarkers(data=comunidades, lat=comunidades$y, lng=comunidades$x,   popup = ~paste0(sep = "<br/>",
+  "<b><a> href='C:/Users/AllanaNunes/Desktop/MARINAUTA/TECNICO/CIA AMBIENTAL/Pesca-PR/Seminario</a></b>","<b> Comunidade: </b>", Name, "<br>"))
+
+                           
+```
+
 
 
