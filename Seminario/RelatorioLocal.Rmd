@@ -1,0 +1,564 @@
+---
+title: "Relatório para 'r params$Origem'"
+author: "zehoogle@gmail.com"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: column
+    vertical_layout: fill
+
+---
+
+```{r setup, include=FALSE}
+#------------------ Packages ------------------
+library(flexdashboard)
+library(dplyr)
+library(lubridate)
+library(ggplot2)
+library(leaflet)
+library(tigris)
+library(leafpop)
+library(htmltools)
+library(sf)
+library(imager)
+library(DT)
+library(dygraphs)
+library(quantmod)
+(library(stringr))
+
+`%>%` <- magrittr::`%>%`
+#------------------ Parameters ------------------
+# Set colors
+# https://www.w3.org/TR/css-color-3/#svg-color
+peso_cor <- "purple"
+duzia_cor <- "peru"
+receita_cor <- "yellow"
+barcos_cor <- "red"
+desembarque_cor<-"forestgreen"
+```
+
+```{r importação e manipulação dos dados, include= F}
+
+#Tabelas e manipulações
+bd<-read.csv("C:/Users/AllanaNunes/Desktop/MARINAUTA/TECNICO/CIA AMBIENTAL/Python/bd_jan22.csv",h=T, sep=";", dec=",")
+
+
+#Manipulações
+bd<-bd[-c(31,32,33,34,35)] #retirando colunas desnecessárias
+
+
+names(bd)[1:30] <- c("ID1", "ID","Data", "Hora","Mes", "Ano", "Entreposto", "Codigo", "Pescador", "SPP", "Barco","Tipo", "Municipio", "Origem", "Tempo_pesca", "Arte_agrupado", "Arte", "Malha", "Tipo_recurso", "Familia", "Taxon","Nome_popular", "Peso", "Duzia", "Preco", "Pesqueiro", "Regiao", "Befeficiamento","Venda", "Receita") # renomeando colunas
+
+
+#Data
+bd$Data<-dmy(bd$Data)
+bd$Receita<-as.numeric(round(bd$Receita, 2))
+
+bd$Peso<-as.numeric(bd$Peso)
+bd$Duzia<-as.numeric(bd$Duzia)
+bd$Preco<-as.numeric(bd$Preco)
+
+bd$data_extenso<-format(bd$Data, "%B de %Y")
+
+so_mes<-bd$Data[length(bd$Data)]
+so_mes<-format(so_mes, "%B")
+###Tabelas agrupadas
+```
+
+
+```{r barcos, include= F}
+## Lista Geral de Embarcações Ativas Registradas por MES
+
+barcos<-bd %>% group_by(Mes=floor_date(Data, "month"), Origem, Barco, SPP) %>% 
+  summarise(Atividade = length(ID1[!is.na(ID1)]))
+barcos<-filter(barcos, Barco != "S/N - -") #tirando os barcos que não são conhecidos
+barcos<-filter(barcos, Barco != "-")#tirando os barcos que não são conhecidos
+
+
+#Lista Geral de Embarcações Ativas Registradas por ANO
+barcos_ano<-bd %>% group_by(Ano=floor_date(Data, "year"), Origem, Barco, SPP) %>% 
+  summarise(Atividade = length(ID1[!is.na(ID1)]))
+barcos_ano<-filter(barcos_ano, Barco != "S/N - -") #tirando os barcos que não são conhecidos
+barcos_ano<-filter(barcos_ano, Barco != "-")#tirando os barcos que não são conhecidos
+
+
+# n° geral de de barcos por mes
+
+barcos_geral_mes<-barcos %>% group_by(Mes) %>%
+  summarize(Barcos_ativos = length(Barco))
+
+# n° feral de barcos por ano
+
+barcos_geral_ano<-barcos_ano%>%group_by(Ano) %>%  summarize(Barcos_ativos = length(Barco))
+
+# numero de barcos por ano em cada comunidade pesqueira
+
+barcos_vila_ano<-barcos_ano%>%group_by(Origem, Ano)%>%
+  summarize(Barcos_ativos = length(Barco))
+
+barcos_vila_mes<-barcos%>%group_by(Origem, Mes)%>%
+  summarize(Barcos_ativos = length(Barco))
+
+
+#-------------------
+
+##Lista de barcos por Analise por entreposto
+
+### Lista de barcos por entreposto por MES
+barcos_1<-bd %>% group_by(Mes=floor_date(Data, "month"), Origem, Barco, SPP, Entreposto) %>% 
+  summarise(Atividade = length(ID1[!is.na(ID1)]))
+
+barcos_1<-filter(barcos_1, Barco != "S/N - -") #tirando os barcos que não são conhecidos
+barcos_1<-filter(barcos_1, Barco != "-")#tirando os barcos que não são conhecidos
+
+
+
+### Lista de barcos por entreposto a cada ANO
+barcos_2<-bd %>% group_by(Ano=floor_date(Data, "year"), Origem, Barco, SPP, Entreposto) %>% 
+  summarise(Atividade = length(ID1[!is.na(ID1)]))
+barcos_2<-filter(barcos_2, Barco != "S/N - -") #tirando os barcos que não são conhecidos
+barcos_2<-filter(barcos_2, Barco != "-")#tirando os barcos que não são conhecidos
+
+## Número de Barcos Ativos em cada entreposto por ano
+
+barcos_entreposto_mes<-barcos_1%>%group_by(Entreposto, Mes) %>%
+  summarize(Barcos_ativos = length(Barco))
+
+barcos_entreposto_ano<-barcos_2%>%group_by(Entreposto,Ano) %>%
+  summarize(Barcos_ativos = length(Barco))
+
+
+
+```
+
+
+```{r dados gerais, include= F}
+
+#Analise por entrepotos
+parametros_entreposto_mes<-bd%>% group_by(Entreposto, Mes=floor_date(Data, "month"), ) %>%
+   summarise(Desembarques = length(ID1[!is.na(ID1)]), Peso = sum(Peso, na.rm=T), Duzia= sum(Duzia, na.rm=T),  Receita = sum(Receita, na.rm=T))
+
+parametros_entreposto_ano<-parametros_entreposto_mes%>%group_by(Entreposto, Ano=floor_date(Mes, "year"))%>%
+  summarise(Desembarques = sum(Desembarques), Peso = sum(Peso, na.rm=T), Duzia= sum(Duzia, na.rm=T),  Receita = sum(Receita, na.rm=T))
+
+
+#Parametros gerais
+
+parametros_geral_mes<-parametros_entreposto_mes%>%group_by(Mes)%>%
+  summarise(Desembarques = sum(Desembarques), Peso = sum(Peso, na.rm=T), Duzia= sum(Duzia, na.rm=T),  Receita = sum(Receita, na.rm=T))
+
+
+parametros_geral_ano<-parametros_entreposto_mes%>%group_by(Ano=floor_date(Mes, "year"))%>%
+  summarise(Desembarques = sum(Desembarques), Peso = sum(Peso, na.rm=T), Duzia= sum(Duzia, na.rm=T),  Receita = sum(Receita, na.rm=T))
+
+#Comunidade
+parametros_vila_mes<-bd%>% group_by(Municipio,Origem, Mes=floor_date(Data, "month"), ) %>%
+   summarise(Desembarques = length(ID1[!is.na(ID1)]), Peso = sum(Peso, na.rm=T), Duzia= sum(Duzia, na.rm=T),  Receita = sum(Receita, na.rm=T))
+
+parametros_vila_ano<-bd%>% group_by(Municipio,Origem, Ano=floor_date(Data, "year"), ) %>%
+   summarise(Desembarques = length(ID1[!is.na(ID1)]), Peso = sum(Peso, na.rm=T), Duzia= sum(Duzia, na.rm=T),  Receita = sum(Receita, na.rm=T))
+
+
+#compilado gerel
+mes_geral<-merge(barcos_geral_mes, parametros_geral_mes, all.x = T, all.y=F)
+ano_geral<-merge(barcos_geral_ano, parametros_geral_ano)
+
+#compilado por entreposto
+
+mes_entreposto<-merge(barcos_entreposto_mes, parametros_entreposto_mes, all.y=T)
+ano_entreposto<-merge(barcos_entreposto_ano, parametros_entreposto_ano)
+
+# compilado por comunidade pesqueira
+mes_vila<-merge(barcos_vila_mes, parametros_vila_mes, all.y=T)
+ano_vila<-merge(barcos_vila_ano, parametros_vila_ano)
+
+```
+
+
+
+```{r datas, include= F}
+meses<-unique(bd$data_extenso)
+
+ultimo_mes<-bd$Data[length(bd$Data)]
+ultimo_mes<-format(ultimo_mes, "%B")
+
+ultimo_ano<-bd$Data[length(bd$Data)]
+ultimo_ano<-format(ultimo_ano,"%Y")
+
+```
+
+Acumulado no Ano
+=======================================================================
+
+
+Column {data-width=600}
+-----------------------------------------------------------------------
+
+### Barcos
+
+```{r}
+
+valueBox(
+  value = paste(format(ano_geral$Barcos_ativos[length(ano_geral$Barcos_ativos)-1], big.mark = ".", decimal.mark = ","), "Barcos"),
+  caption = "ativos monitorados",
+  icon = "fas fa-ship",
+  color = barcos_cor
+)
+```
+
+
+### Desembarque
+
+```{r}
+
+
+valueBox(
+  value = paste(format(ano_geral$Desembarques[length(ano_geral$Desembarques)-1], big.mark = ".", decimal.mark = ","), "Registros"),
+  caption = "de desembarques monitorados",
+  icon = "fas fa-anchor",
+  color = desembarque_cor
+)
+
+
+```
+
+
+### Peso
+
+```{r}
+valueBox(
+  value = paste(format(ano_geral$Peso[length(ano_geral$Peso)-1], big.mark = ".", decimal.mark = ","), "Kg"),
+  caption = "foi o peso total",
+  icon = "fas fa-fish",
+  color = peso_cor
+)
+```
+
+
+### Duzia {.value-box}
+
+```{r}
+valueBox(
+  value = paste(format(ano_geral$Duzia[length(ano_geral$Duzia)-1], big.mark = ".", decimal.mark = ","), "Dz"),
+  caption = "foi a quantidade de dúzias",
+  icon = "fas fa-fish",
+  color = duzia_cor
+)
+```
+
+
+### Receita {.value-box}
+
+```{r}
+# [length(ano_geral$Receita)-1]...o menos 1 é por os dados sao do ano anterior
+valueBox(
+  value = paste("R$",format(ano_geral$Receita[length(ano_geral$Receita)-1], big.mark = ".", decimal.mark = ",")),
+  caption = "foi receita bruta gerada",
+  icon = "fas fa-dollar-sign",
+  color = receita_cor
+)
+```
+
+
+
+Column{.tabset}
+-----------------------------------------------------------------------
+### **Pescado**
+
+```{r}
+library(plotly)
+bd_2021<-bd %>% filter(Ano == 2021)
+
+toprec<-bd_2021%>%group_by(Nome_popular)%>%
+  summarise(totalreceita = round(sum(Receita, na.rm=T),2))
+
+ prin_esp<-toprec %>% arrange(desc(totalreceita))
+
+
+
+p <- plot_ly(
+  toprec,
+  labels = ~ Nome_popular,
+  parents = NA,
+  values = ~ round(totalreceita),
+  type = 'treemap',
+  textinfo="label+value+percent parent",
+  hovertemplate = "Recurso pesqueiro: %{label}<br>Receita Bruta: %{value}<extra></extra>"
+)
+p
+
+
+```
+
+
+### **Pesqueiro**
+
+```{r}
+
+pesqrec<-bd_2021%>%group_by(Pesqueiro)%>%
+  summarise(totalreceita = round(sum(Receita, na.rm=T),2))
+
+
+
+
+p <- plot_ly(
+  pesqrec,
+  labels = ~ Pesqueiro,
+  parents = NA,
+  values = ~ round(totalreceita),
+  type = 'treemap',
+  textinfo="label+value+percent parent",
+  hovertemplate = "Pesqueiro: %{label}<br>Receita Bruta: %{value}<extra></extra>"
+)
+p
+
+
+
+```
+
+
+
+### **Destino**
+
+```{r}
+
+origemrec<-bd_2021%>%group_by(Entreposto)%>%
+  summarise(totalreceita = round(sum(Receita, na.rm=T),2))
+
+
+
+
+p <- plot_ly(
+  origemrec,
+  labels = ~ Entreposto,
+  parents = NA,
+  values = ~ round(totalreceita),
+  type = 'treemap',
+  textinfo="label+value+percent parent",
+  hovertemplate = "Destino do Pescado: %{label}<br>Receita Bruta: %{value}<extra></extra>"
+)
+p
+
+
+
+```
+
+
+### **Barco**
+
+```{r}
+
+origemrec<-bd_2021%>%group_by(Barco)%>%
+  summarise(totalreceita = round(sum(Receita, na.rm=T),2))
+
+
+
+
+p <- plot_ly(
+  origemrec,
+  labels = ~ Barco,
+  parents = NA,
+  values = ~ round(totalreceita),
+  type = 'treemap',
+  textinfo="label+value+percent parent",
+  hovertemplate = "Destino do Pescado: %{label}<br>Receita Bruta: %{value}<extra></extra>"
+)
+p
+
+
+
+```
+
+```{r GRAFICOS GERAIS, include= F}
+
+mes_entreposto$Ano<-floor_date(mes_entreposto$Mes, "year")
+mes_entreposto$Ano<-as.factor(mes_entreposto$Ano)
+mes_entreposto$Mes<-format(mes_entreposto$Mes, "%m")
+mes_entreposto
+```
+
+Column {.tabset}
+----------------------------------------------------------------------------------
+### Eufrasina
+
+
+```{r}
+
+knitr::include_graphics("C:/Users/AllanaNunes/Desktop/MARINAUTA/TECNICO/CIA AMBIENTAL/Pesca-PR/Seminario/fotos/Eufrasina.jpg")
+
+```
+
+
+### Pescada amarela
+
+```{r}
+
+knitr::include_graphics("C:/Users/AllanaNunes/Desktop/MARINAUTA/TECNICO/CIA AMBIENTAL/Pesca-PR/Seminario/fotos/pescadaamarela.jpg")
+
+```
+
+
+Principais espécies
+=======================================================================
+
+
+Row{.tabset}
+-----------------------------------------------------------------------
+### `r  prin_esp[1,1]`
+
+```{r}
+esp1<- prin_esp[1,1]; esp2<-prin_esp[2,1]; esp3<-prin_esp[3,1]
+  
+library(RColorBrewer)
+bd$Ano<-as.factor(bd$Ano)
+
+bdesp1<-subset(bd_2021, Nome_popular=="Pescada calafate amarela")
+
+
+
+x1<-bdesp1%>%group_by(Mes=floor_date(Data, "month"), Ano) %>%
+  summarise(peso_g = sum(Peso, na.rm=T), duzia_g= sum(Duzia, na.rm=T),  receita_g = sum(Receita, na.rm=T)) # dados gerais totais por mes
+
+x1$M<-c(12, rep(1:12, length.out=length(x1$Mes)-1))
+x1$M<-as.factor(x1$M)
+
+colourCount = length(unique(x1$Ano))
+getPalette = colorRampPalette(brewer.pal(8, "Set2"))
+ 
+
+
+z1<-ggplot(x1, aes(x=M, y=peso_g, group= Ano), fill=getPalette(colourCount))+
+  geom_line(aes(color=Ano))+
+  geom_point(aes(color=Ano))+
+  labs(x="Meses",y = "Peso (Kg)")
+
+z1+ theme_classic()+theme(legend.position="none")+ 
+ggtitle(esp1)
+```
+
+```{r}
+
+knitr::include_graphics("C:/Users/AllanaNunes/Desktop/MARINAUTA/TECNICO/CIA AMBIENTAL/Pesca-PR/Seminario/fotos/Eufrasina.jpg")
+
+
+```
+
+###  `r  prin_esp[2,1]`
+```{r}
+
+
+bdesp2<-subset(bd_2021, Nome_popular=="Camarao branco")
+
+x1<-bdesp2%>%group_by(Mes=floor_date(Data, "month"), Ano) %>%
+  summarise(peso_g = sum(Peso, na.rm=T), duzia_g= sum(Duzia, na.rm=T),  receita_g = sum(Receita, na.rm=T)) # dados gerais totais por mes
+
+x1$M<-c(12, rep(1:12, length.out=length(x1$Mes)-1))
+x1$M<-as.factor(x1$M)
+
+colourCount = length(unique(x1$Ano))
+getPalette = colorRampPalette(brewer.pal(8, "Set2"))
+ 
+
+
+z2<-ggplot(x1, aes(x=M, y=peso_g, group= Ano), fill=getPalette(colourCount))+
+  geom_line(aes(color=Ano))+
+  geom_point(aes(color=Ano))+
+  labs(x="Meses",y = "Peso (Kg)")
+
+z2+ theme_classic()+theme(legend.position="none")+ 
+ggtitle(esp2)
+
+```
+
+###  `r  prin_esp[3,1]`
+
+```{r}
+bdesp3<-subset(bd_2021, Nome_popular=="Miraguaia gorete")
+
+
+
+x1<-bdesp3%>%group_by(Mes=floor_date(Data, "month"), Ano) %>%
+  summarise(peso_g = sum(Peso, na.rm=T), duzia_g= sum(Duzia, na.rm=T),  receita_g = sum(Receita, na.rm=T)) # dados gerais totais por mes
+
+x1$M<-c(12, rep(1:12, length.out=length(x1$Mes)-1))
+x1$M<-as.factor(x1$M)
+
+colourCount = length(unique(x1$Ano))
+getPalette = colorRampPalette(brewer.pal(8, "Set2"))
+ 
+
+
+z3<-ggplot(x1, aes(x=M, y=peso_g, group= Ano), fill=getPalette(colourCount))+
+  geom_line(aes(color=Ano))+
+  geom_point(aes(color=Ano))+
+  labs(x="Meses",y = "Peso (Kg)")
+
+z3+ theme_classic()+theme(legend.position="none")+ 
+ggtitle(esp3)
+```
+
+
+
+Comparativo anual
+=======================================================================
+
+
+Row{.tabset}
+-----------------------------------------------------------------------
+### Barcos
+
+```{r}
+
+historico21<-ano_geral[c(-1,-10),]# Retira  o ano de 2013 (so tem dezembro) e o ano de 2022 (seminario refetne ao ano de 2021)
+z1<-ggplot(historico21, aes(x=Ano, y=Barcos_ativos))+
+geom_bar(stat="identity", color="black", fill=barcos_cor)+
+geom_hline(aes(yintercept = mean(Barcos_ativos[-length(Barcos_ativos)])))+
+theme_minimal()
+  
+z2<-ggplot(historico21, aes(x=Ano, y=Desembarques))+
+geom_bar(stat="identity", color="black", fill=desembarque_cor)+
+geom_hline(aes(yintercept = mean(Desembarques[-length(Desembarques)])))+
+theme_minimal()
+
+z3<-ggplot(historico21, aes(x=Ano, y=Peso))+
+geom_bar(stat="identity", color="black", fill=peso_cor)+
+geom_hline(aes(yintercept = mean(Peso[-length(Peso)])))+
+theme_minimal()
+
+z4<-ggplot(historico21, aes(x=Ano, y=Duzia))+
+geom_bar(stat="identity", color="black", fill=duzia_cor)+
+geom_hline(aes(yintercept = mean(Duzia[-length(Duzia)])))+
+theme_minimal()
+
+z5<-ggplot(historico21, aes(x=Ano, y=Receita))+
+geom_bar(stat="identity", color="black", fill=receita_cor)+
+geom_hline(aes(yintercept = mean(Receita[-length(Receita)])))+
+theme_minimal()
+
+
+z1
+
+
+
+```
+
+### Desembarques
+```{r}
+z2
+```
+
+### Peso
+```{r}
+z3
+```
+
+### Unidades
+```{r}
+z4
+```
+
+
+### Receita Bruta
+```{r}
+z5
+```
+

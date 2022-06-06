@@ -402,7 +402,13 @@ comunidades$y <-as.numeric(comunidades$y);comunidades$x<-as.numeric(comunidades$
  # addCircleMarkers(
   #  lat=cadastro$X_Local.de.cadastro_latitude, lng=cadastro$X_Local.de.cadastro_longitude, 
  #   color= "red")
-files <- list.files(path = "https://zehoogle.github.io/", pattern = "*.jpg", full.names=TRUE)
+
+
+
+leaflet(comunidades) %>%
+  addTiles() %>%
+  addMarkers(data=comunidades, lat=comunidades$y, lng=comunidades$x,   popup = ~paste0(sep = "<br/>",
+  '<b><a href="C:/Users/AllanaNunes/Desktop/MARINAUTA/TECNICO/CIA AMBIENTAL/Pesca-PR/Seminario/Eufrasina.html" </a></b>',"<b> Comunidade: </b>", Name, "<br>"))
 
 
 leaflet(comunidades) %>%
@@ -413,5 +419,19 @@ leaflet(comunidades) %>%
                            
 ```
 
+```{r}
+
+conteudo <- paste(sep = "<br/>",
+                   paste0("<img src='comunidades$link", "' />"),
+                   paste0("<b>Name: </b>", "Frigorífico Anglo"),
+                   paste0("<b>Place: </b>", "Fray Bentos, Uruguay"),
+                   paste0("<a href='https://en.wikipedia.org/wiki/Frigor%C3%ADfico_Anglo_del_Uruguay", "'>Link</a>"))
+
+
+leaflet(comunidades) %>%
+  addTiles() %>%
+  addMarkers(data=comunidades, lat=comunidades$y, lng=comunidades$x,   popup = conteudo)
+
+```
 
 
