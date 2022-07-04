@@ -36,7 +36,7 @@ desembarque_cor<-"forestgreen"
 #------------------ Data ------------------
 
 #verificar endereço
-bd<-read.csv("C:/Users/AllanaNunes/Desktop/MARINAUTA/TECNICO/CIA AMBIENTAL/Python/bd_dez21.csv",h=T, sep=";", dec=",")
+bd<-read.csv("C:/Users/AllanaNunes/Desktop/MARINAUTA/TECNICO/CIA AMBIENTAL/Python/bd_dez21.csv",h=T, sep=";", dec=",", fileEncoding = "ISO-8859-1")
 
 ## Manipulações
 
@@ -64,10 +64,10 @@ bd$Barco<-str_to_upper(bd$Barco)
 
 
 #Transforando as classes das colunas
-#bd$Receita<-as.numeric(bd$Receita)
-#bd$Peso<-as.numeric(bd$Peso)
-#bd$Preco<-as.numeric(bd$Preco)
-#bd$Receita<-as.numeric(bd$Receita)
+bd$Receita<-as.numeric(bd$Receita)
+bd$Peso<-as.numeric(bd$Peso)
+bd$Preco<-as.numeric(bd$Preco)
+bd$Duzia<-as.numeric(bd$Duzia)
 
 
 #Numero de barcos ativos por mes em cada entreposto
@@ -85,6 +85,7 @@ barcos1
 barcos2<-barcos1 %>% group_by(Mes) %>%
   summarize(Barcos_ativos = sum(Barcos_ativos)) # barcos totais por mes
 barcos2
+
 
 # Dados Gerais
 dg_ent<- bd%>%group_by(Mes=floor_date(Data, "month"),Ano, Entreposto) %>%

@@ -4,14 +4,15 @@ setwd("C:/Users/AllanaNunes/Desktop/MARINAUTA/TECNICO/CIA AMBIENTAL/PescaBase")
 #Script criado para manipular dados provenientes dos app
 
 #Pacotes usados
-pacman::p_load(tidyverse,stringr,xlsx, lubridate, chron,tidyr,abjutils)
+
 library(tidyr)
 library(stringr)
 library(dplyr)
-library(xlsx)
+#library(xlsx)
 library(lubridate)
 library(chron)
-# Dados utilizados são provenientes do servidor KoBoToolBox, baixados no formato xls.
+  library(abjutils)
+  # Dados utilizados são provenientes do servidor KoBoToolBox, baixados no formato xls.
 # Na sequência, cada aba do arquivo é salvo como .csv, com a seguinte nomenclatura:
 # Primeira Aba: f_1.csv / Segunda Aba: f_2.csv
 
@@ -139,7 +140,9 @@ recurso$Pescado<-str_trim(recurso$Pescado)
 
 names(df)
 
-write.xlsx(df, file = paste("BD_PMAP", Sys.Date(),".xlsx"),  col.names=TRUE, row.names = F)
+library(writexl)
+#write.xlsx(df, file = paste("BD_PMAP", Sys.Date(),".xlsx"),  col.names=TRUE, row.names = F) pacote nao esta funcionando na versao mais nova do r
+write_xlsx(df, path = paste("BD_PMAP", Sys.Date(),".xlsx"),  col_names=TRUE )
 
 
 
