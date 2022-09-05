@@ -4,27 +4,31 @@ setwd("C:/Users/AllanaNunes/Desktop/MARINAUTA/TECNICO/CIA AMBIENTAL/PescaBase")
 #Script criado para manipular dados provenientes dos app
 
 #Pacotes usados
-
 library(tidyr)
 library(stringr)
 library(dplyr)
-#library(xlsx)
+library(writexl)
 library(lubridate)
 library(chron)
-  library(abjutils)
-  # Dados utilizados são provenientes do servidor KoBoToolBox, baixados no formato xls.
+library(abjutils)
+
+  
+  
+  
+    # Dados utilizados são provenientes do servidor KoBoToolBox, baixados no formato xls.
 # Na sequência, cada aba do arquivo é salvo como .csv, com a seguinte nomenclatura:
 # Primeira Aba: f_1.csv / Segunda Aba: f_2.csv
 
 #Leitura dos dados
   
-df1<-read.csv("f1.csv", h=T, sep=";")
+df1<-read.csv("f1.csv", h=T, sep=";", encoding = "latin1")
+
 names(df1)
 
 
 
 
-df2<-read.csv("f2.csv", h=T, sep=";")
+df2<-read.csv("f2.csv", h=T, sep=";", encoding = "latin1")
 
 
 pesq<-read.csv("pesq.csv", h=T, sep=";") # Lista de todos os Pesqueiros
