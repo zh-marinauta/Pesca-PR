@@ -33,7 +33,7 @@ df2<-read.csv("f2.csv", h=T, sep=";", encoding = "latin1")
 
 pesq<-read.csv("pesq.csv", h=T, sep=";") # Lista de todos os Pesqueiros
 recurso<-read.csv("recurso.csv", h=T, sep=";") # Lista dos recursos e respectivos nomes cientidicos
-barco<-read.csv("barco0222a.csv", h=T, sep=";") # Lista dos recursos e respectivos nomes cientidicos
+barco<-read.csv("barcos22.csv", h=T, sep=";") # Lista dos recursos e respectivos nomes cientidicos
 barco$Barco<-str_to_upper(barco$Barco)
 barco$Barco<-str_trim(barco$Barco)
 
