@@ -31,9 +31,7 @@ library(stringr)
 peso_cor <- "purple"
 duzia_cor <- "peru"
 receita_cor <- "yellow"
-barcos_cor <- "red"
-desembarque_cor<-"forestgreen"
-#------------------ Data ------------------
+barcos_cor <- "red"#------------------ Data ------------------
 
 #verificar endereço
 bd<-read.csv("C:/Users/AllanaNunes/Desktop/MARINAUTA/TECNICO/CIA AMBIENTAL/Python/bd_dez21.csv",h=T, sep=";", dec=",", fileEncoding = "ISO-8859-1")
@@ -45,6 +43,8 @@ bd<-bd[-c(31,32,33,34,35)]
 
 # renomeando colunas
 names(bd)[1:30] <- c("ID1", "ID","Data", "Hora","Mes", "Ano", "Entreposto", "Codigo", "Pescador", "SPP", "Barco","Tipo", "Municipio", "Origem", "Tempo_pesca", "Arte_agrupado", "Arte", "Malha", "Tipo_recurso", "Familia", "Taxon","Nome_popular", "Peso", "Duzia", "Preco", "Pesqueiro", "Regiao", "Befeficiamento","Venda", "Receita") 
+
+desembarque_cor<-"forestgreen"
 
 # Trabalhando a Data
 
