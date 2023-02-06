@@ -21,14 +21,14 @@ library(abjutils)
 
 #Leitura dos dados
   
-df1<-read.csv("f1.csv", h=T, sep=";", encoding = "latin1")
+df1<-read.csv("f_1.csv", h=T, sep=";", encoding = "latin1")
 
 names(df1)
 
 
 
 
-df2<-read.csv("f2.csv", h=T, sep=";", encoding = "latin1")
+df2<-read.csv("f_2.csv", h=T, sep=";", encoding = "latin1")
 
 
 pesq<-read.csv("pesq.csv", h=T, sep=";") # Lista de todos os Pesqueiros
@@ -62,6 +62,7 @@ names(df2)<-c("Tipo_recurso","Pescado","Peso","Duzia","Preco","Beneficiamento","
 ### UnIr as duas tabelas
 df<-merge(x=df1,y=df2,by="ID_registro",all.y=T) # mescla as duas tabelas provenientes do App
 
+
 df<-df %>% mutate_all(na_if,"") # Transtorma todas as celulas vazias em "NA"
 
 names(df)
@@ -69,7 +70,7 @@ names(df)
 #conjunto de scripts para arrumar as strings
 
 
-df$Data<-as.Date(df$Data)
+df$Data<-as.Date(df$Data,  format = "%d/%m/%Y")
 df$Mes<-format(df$Data, "%m")
 
 df$Ano<-format(df$Data, "%Y")
