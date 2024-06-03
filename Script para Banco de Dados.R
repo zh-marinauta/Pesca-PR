@@ -1,5 +1,5 @@
 {
-setwd("C:/Users/AllanaNunes/Desktop/MARINAUTA/TECNICO/CIA AMBIENTAL/PescaBase")
+setwd("/home/zehoogle/Documentos/Marinauta/CIA AMBIENTAL/dado_bruto")
 
 #Script criado para manipular dados provenientes dos app
 
@@ -42,15 +42,17 @@ barco$Barco<-str_trim(barco$Barco)
 
 ## Trabalha na coluna de dados gerais do registro (f_1.csv)
 names(df1)
-df1<-df1%>%unite("comunidade", 17:25, na.rm=T, remove = T)
-df1<-df1%>%unite("Tipo", 14: 15, na.rm=T, remove = T)
-df1<-df1%>% unite("Pesqueiro", 18:25, na.rm=T, remove=T)
+df1<-df1%>%unite("comunidade", c(16:24,36) ,na.rm=T, remove = T)
+df1<-df1%>%unite("Tipo", 13: 14, na.rm=T, remove = T)
+df1<-df1%>% unite("Pesqueiro", 17:24, na.rm=T, remove=T)
 
-df1<-df1[-c(7,10,11,20)]
-names(df1)<-c("ID_coletor", "ID_dispositivo", "Foto", "Data", "Hora","Entreposto", "Latitude", "Longitude","Pescador", "Barco", "Tipo","Municipio",
-              "Comunidade", "Duracao","Pesqueiro", "OBS", "ID_registro", "Verificador", "Submetido", "Status", "Indice")
-df1<-df1[-c(22:25)]
+df1<-df1[-c(6,9,10,19, 22:29)]
+
+names(df1)<-c("ID_dispositivo", "Foto", "Data", "Hora","Entreposto", "Latitude", "Longitude","Pescador", "Barco", "Tipo","Municipio",
+              "Comunidade", "Duracao","Pesqueiro", "OBS", "ID_registro", "Verificador")
+
 df1
+
 ### Trabalha na  planilha de recursos (f_2.csv)
 names(df2)
 df2<-df2%>% unite("Recurso", 2:6, na.rm=T, remove=T)
@@ -69,7 +71,8 @@ names(df)
 
 #conjunto de scripts para arrumar as strings
 
-
+class(df$Data)
+ df$Data
 df$Data<-as.Date(df$Data,  format = "%d/%m/%Y")
 df$Mes<-format(df$Data, "%m")
 
@@ -117,14 +120,17 @@ df$Duzia<-as.numeric(df$Duzia)
 df$Preco<-as.numeric(df$Preco)
 df$Receita<-ifelse(is.na(df$Peso),df$Duzia*df$Preco,df$Peso*df$Preco)
 
-df$Pescador<-chartr("ÁáéíóãõçÇúôê", "AaeioaocCuoe", df$Pescador)
-df$Barco<-chartr("ÁáéíóãõçÇúôê", "AaeioaocCuoe", df$Barco)
+
 
 df$Pescador<-str_to_upper(df$Pescador)
 df$Pescador<-str_trim(df$Pescador)
 
 df$Barco<-str_trim(df$Barco)
 df$Barco<-str_to_upper(df$Barco)
+df$Pescador<-chartr("ÁáéíóãõçÇúôêÃÓ", "AaeioaocCuoeAO", df$Pescador)
+df$Barco<-chartr("ÁáéíóãõçÇúôêÂÓ", "AaeioaocCuoeAO", df$Barco)
+
+
 
 df
 
